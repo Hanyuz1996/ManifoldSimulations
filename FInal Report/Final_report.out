@@ -1,0 +1,4 @@
+\BOOKMARK [1][-]{section.1}{Estimation\040Step}{}% 1
+\BOOKMARK [2][-]{subsection.1.1}{Local\040PCA\040for\040tangent\040space\040estimation}{section.1}% 2
+\BOOKMARK [2][-]{subsection.1.2}{Resampling\040to\040get\040sectional\040curvatures}{section.1}% 3
+\BOOKMARK [2][-]{subsection.1.3}{Optimization\040to\040solve\040the\040linear\040system}{section.1}% 4

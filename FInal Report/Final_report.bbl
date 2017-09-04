@@ -1,0 +1,15 @@
+\begin{thebibliography}{1}
+
+\bibitem{VDM}
+H.T.~Wu A.Singer.
+\newblock Vector diffusion maps and the connection laplacian.
+\newblock {\em arXiv:1102.0075v1}, Feb 2011.
+
+\bibitem{ltsa}
+H.Zha Z.Zhang.
+\newblock Principal manifolds and nonlinear dimension reduction via local
+  tangent space alignment.
+\newblock In {\em International Conference on Intelligent Data Engineering and
+  Automated Learning}, 2003.
+
+\end{thebibliography}
