@@ -4,6 +4,7 @@ import numpy.linalg as npl
 import scipy as sp
 import scipy.stats as st
 from scipy.spatial.distance import pdist,squareform
+from scipy.optimize import fmin
 #import matplotlib.pyplot as plt
 #import pandas as pd
 import math
@@ -14,8 +15,8 @@ my_path = os.getcwd()
 np.random.seed(2017)
 mean=[0,0,0,0]
 cov=[[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]]
-size = 2000
-epsilon = np.array(0.5)
+size = {0}
+epsilon = np.array([{1}])
 dim = 3
 t = 1
 sample_time = 1000
@@ -23,21 +24,21 @@ repeat_time = size
 num_of_nbr = np.zeros(size)
 print(size)
 print(epsilon)
+np.set_printoptions(precision = 6, threshold=np.inf)
+
 
 # Generating the stretching matrix S
-
-def findind(typeind,i,j=0,k=0,l=0,d=dim):
+def findind(typeind,i,j=1,k=1,l=1,d=dim):
     if(typeind == 1):
         res = (i-1)*(d**3)+(j-1)*(d**2)+(k-1)*d+l
-        return(res)
     if(typeind == 2):
-        return(0.5*(2*d-i)*(i-1)+(j-i))
+        res = 0.5*(2*d-i)*(i-1)+(j-i)
     if(typeind == 3):
-        return((3*d*d*i-3*d*d-3*d*i*i+3*d+i**3-i)/6-0.5*(i-j+1)*(2*d-i-j)-j+k)
+        res = (3*d*d*i-3*d*d-3*d*i*i+3*d+i**3-i)/6-0.5*(i-j+1)*(2*d-i-j)-j+k
     if(typeind == 4):
         res = -(i-j+1)*(3*d**2-3*d*i-3*d*j-3*d+i**2+i*j+2*i+j**2+j)/6-0.5*(j-k+1)*(2*d-j-k)-k+l
         +(4*d**3*i-4*d**3-6*d**2*i**2-6*d**2*i+12*d**24*d*i**3+6*d*i**2-2*d*i-8*d-i**4-2*i**3+i**2+2*i)
-        return(res)
+    return(int(res))
                    
 
 def stretch(d):
@@ -102,7 +103,6 @@ def stretch(d):
                         else:
                             S[findind(1,i,j,k,l)-1,d*(d-1)/2+3*(findind(3,sort[0],sort[1],sort[2])-1)+2]=-1
                             continue
-                    print(i,j,k,l)
                     arg = np.argsort([i,j,k,l])
                     sort = np.sort([i,j,k,l])
                     if(abs(arg[0]-arg[1])==abs(arg[2]-arg[3])):
@@ -151,16 +151,17 @@ def stretch(d):
                             continue
     return(S)    
                     
-                    
-                        
-
-# Generating uniformly distributed data on a 2D sphere
+# Generating data points
 def gendata(mean,cov,size):
     np.random.seed(2017)
     X = np.random.multivariate_normal(mean,cov,size)
     Xnorm = np.linalg.norm(X,axis=1) 
     Da = X/(Xnorm[:,np.newaxis])       
     return(Da)
+
+Da = gendata(mean,cov,size)
+iter = 0
+S = stretch(dim)
 
 def findnbr(Da,epsilon):
     dnbr = dict()
@@ -188,7 +189,7 @@ def findbase(Da,dnbr,wnbr,indnbr):
         Dp = np.diag(np.sqrt(wnbr[p]))    
         Bp = np.dot(Xp, Dp)
         u, sigma, v = npl.svd(Bp)
-        Op = u[:,:2]
+        Op = u[:,:dim]
         Oplist.append(Op)
     '''
     Q = dict()
@@ -349,40 +350,45 @@ def curvatp_gb_simp(p,ind,Oplist,dnbr):
         ang = angSum(p,ind[0],ind[1],Oplist,Da)
         Area = findArea(p,ind[0],ind[1],dnbr)
         if(Area < 0 or ang[0] < 0):
-            return(np.nan)
+            return(np.nan,np.nan)
         else: 
             res = (ang[0]-np.pi)/Area
     else:
         ang = angSum(ind[0],ind[1],ind[2],Oplist,Da)
         Area = findArea(p,ind[0],ind[1],dnbr)+findArea(p,ind[1],ind[2],dnbr)+findArea(p,ind[0],ind[2],dnbr)
         if(Area < 0 or ang[0] < 0):
-            return(np.nan)
+            return(np.nan,np.nan)
         else: 
             res = (ang[0]-np.pi)/Area
     coef = np.kron(ang[1],np.kron(ang[2],np.kron(ang[2],ang[1])))/(npl.norm(ang[1])**2*npl.norm(ang[2])**2-(np.inner(ang[1],ang[2]))**2)
-    return(res)
-    
+    return(res,coef)
+
+def El(res,A,W):
+    return(np.median((A-np.inner(W,res))**2))
+
 def curvatp_gb_ensemble(p,indnbr,Da,Oplist,dnbr):
     nbr = indnbr[p]
     if(len(nbr)<2):
         return(np.nan)
     K = np.min([sample_time,len(nbr)*(len(nbr)-1)/2])
-    sample_res = np.zeros(K)
-    sample_coef = np.zeros((K,dim**4))
+    sample_res = []
+    sample_coef = []
     for time in range(K):
         ind = np.random.choice(nbr,2,replace = False)
         ind = np.append(p,ind)
-        sample_res[time] = curvatp_gb_simp(p,ind,Oplist,dnbr)[0]
-        if(np.isnan(sample_res[time])):
+        temp = curvatp_gb_simp(p,ind,Oplist,dnbr)
+        if(np.isnan(temp[0])):
             continue
-        sample_coef[time,:]=curvatp_gb_simp(p,ind,Oplist,dnbr)[1]
+        sample_res.append(temp[0])
+        sample_coef.append(temp[1])
+    sample_res=np.array(sample_res).T
+    sample_coef = np.array(sample_coef)
     if(np.sum(~np.isnan(sample_res))==0):
         return(np.nan)
     else:
         W = np.dot(sample_coef,S)
 #       Minimizing the linear system
-        res = np.zeros(dim**2*(dim**2-1)/12)
-        sample_res - np.inner(W,res)
+        res = fmin(El,np.array([-1,-1,-1,0,0,0]),args=(np.array(sample_res),W),disp=False)
     return(res)
 
 '''        
@@ -448,16 +454,14 @@ def curvatp_gb_enclose(p,indnbr,Da,Oplist,dnbr):
 
 t1 = time.time()  
 
-Da = gendata(mean,cov,size)
-iter = 0
-S = stretch(dim)
 for eps in epsilon:
     dnbr,wnbr,indnbr = findnbr(Da,eps)
     Oplist = findbase(Da,dnbr,wnbr,indnbr)
     Opq = findopq(Oplist,eps,dnbr)
-    res_gb = np.zeros((size))
+    res_gb = np.zeros((size,dim*dim*(dim*dim-1)/12))
     for p in range(repeat_time):
         res_gb[p,:] = curvatp_gb_ensemble(p,indnbr,Da,Oplist,dnbr)
+        print(p)
 #       res_paras_ensemble[iter,p] = curvatp_paratrans_ensemble(p,Da,Oplist,Opq,eps,dnbr,indnbr)
 #       res_quadfit[p] = curvatp_quadfit(p,indnbr,Da,dmat,wmat,d, Oplist[p])
     iter += 1
@@ -465,7 +469,7 @@ for eps in epsilon:
     if(np.sum(~np.isnan(res_gb))==0):
         print("No successful point under this epsilon")
         continue
-    print(res_gb)
+    print(res_gb[:100,:3])
 t2 = time.time()
 print("time: ",t2-t1)
 
