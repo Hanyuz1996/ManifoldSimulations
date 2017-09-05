@@ -5,7 +5,7 @@ import scipy as sp
 import scipy.stats as st
 from scipy.spatial.distance import pdist,squareform
 from scipy.optimize import fmin
-import statsmodels as stat
+from statsmodels.robust.robust_linear_model import RLM
 #import matplotlib.pyplot as plt
 #import pandas as pd
 import math
@@ -16,7 +16,7 @@ my_path = os.getcwd()
 np.random.seed(2017)
 mean=[0,0,0,0]
 cov=[[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]]
-size = 1000
+size = 2000
 epsilon = np.array([0.5])
 dim = 3
 t = 1
@@ -357,29 +357,34 @@ def curvatp_gb_ensemble(p,indnbr,Da,Oplist,dnbr):
         return(np.nan)
     else:
         W = np.dot(sample_coef,S)
-        rlm_model = stat.RLM
+        rlm_model = RLM(sample_res,W)
+        res_init = rlm_model.fit().params
 #       Minimizing the linear system
-        res = fmin(El,np.array([-0.5,-0.5,-0.5,-0.5,-0.5,-0.5]),args=(np.array(sample_res),W),disp=False)
-    return(res)
+        res = fmin(El,res_init,args=(np.array(sample_res),W),disp=False)
+    return(res_init,res)
 
 t1 = time.time()  
-
 for eps in epsilon:
     dnbr,wnbr,indnbr = findnbr(Da,eps)
     Oplist = findbase(Da,dnbr,wnbr,indnbr)
-    res_gb = np.zeros((size,dim*dim*(dim*dim-1)/12))
+    res_init = np.zeros((size,dim*dim*(dim*dim-1)/12))
+    res_med = np.zeros((size,dim*dim*(dim*dim-1)/12))
     for p in range(repeat_time):
-        res_gb[p,:] = curvatp_gb_ensemble(p,indnbr,Da,Oplist,dnbr)
+        res = curvatp_gb_ensemble(p,indnbr,Da,Oplist,dnbr)
+        res_init[p,:]= res[0]
+        res_med[p,:] = res[1]
 #       res_paras_ensemble[iter,p] = curvatp_paratrans_ensemble(p,Da,Oplist,Opq,eps,dnbr,indnbr)
 #       res_quadfit[p] = curvatp_quadfit(p,indnbr,Da,dmat,wmat,d, Oplist[p])
     iter += 1
     print("epsilon: ", eps)
-    if(np.sum(~np.isnan(res_gb))==0):
+    if(np.sum(~np.isnan(res_init))==0):
         print("No successful point under this epsilon")
         continue
     for i in range(dim*(dim-1)/2):
-        print("Median",i+1,": ", np.median(res_gb[:,i]))
-        print("Variance",i+1,": ",np.var(res_gb[:,i]))
+        print("Median init",i+1,": ", np.median(res_init[:,i]))
+        print("Variance init",i+1,": ",np.var(res_init[:,i]))
+        print("Median med",i+1,": ", np.median(res_med[:,i]))
+        print("Variance med",i+1,": ",np.var(res_med[:,i]))
 #   print(res_gb)
 t2 = time.time()
 print("time: ",t2-t1)
