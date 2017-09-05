@@ -5,6 +5,7 @@ import scipy as sp
 import scipy.stats as st
 from scipy.spatial.distance import pdist,squareform
 from scipy.optimize import fmin
+import statsmodels as stat
 #import matplotlib.pyplot as plt
 #import pandas as pd
 import math
@@ -15,11 +16,10 @@ my_path = os.getcwd()
 np.random.seed(2017)
 mean=[0,0,0,0]
 cov=[[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]]
-size = {0}
-epsilon = np.array([{1}])
+size = 1000
+epsilon = np.array([0.5])
 dim = 3
 t = 1
-sample_time = 1000
 repeat_time = size
 num_of_nbr = np.zeros(size)
 print(size)
@@ -173,10 +173,10 @@ def findnbr(Da,epsilon):
         indp = np.setdiff1d(indp,np.array(p))
         num_of_nbr[p] = len(indp)
         for q in indp:
-            dnbr[p,q] = dist[q]
+            dnbr[p,q] = dist[q]    
         dist = dist[indp]
         indnbr.append(indp)
-        wnbr.append(np.exp(-(dist**2)/epsilon))
+        wnbr.append(np.exp(-(dist**2)/np.sqrt(epsilon)))
     return(dnbr,wnbr,indnbr)
 
 def findbase(Da,dnbr,wnbr,indnbr):
@@ -191,24 +191,8 @@ def findbase(Da,dnbr,wnbr,indnbr):
         u, sigma, v = npl.svd(Bp)
         Op = u[:,:dim]
         Oplist.append(Op)
-    '''
-    Q = dict()
-    for i in range(size):
-        for j in range(size):
-            Q[i,j]=np.dot(Oplist[i].T, Oplist[j])
-    B = np.zeros((size*d,size*d))
-    for i in range(size):
-        for j in range(size):
-            temp = np.zeros((2,2))
-            if j==i:
-                for k in indnbr[p]:
-                    temp = (np.eye(d) + np.dot(Q[j,k],Q[j,k].T))*wmat[j,k]
-                    B[i*d:(i+1)*d,:][:,j*d:(j+1)*d] = B[i*d:(i+1)*d,:][:,j*d:(j+1)*d] + temp
-            else:
-                B[i*d:(i+1)*d,:][:,j*d:(j+1)*d] = -2*wmat[i,j]*Q[i,j]
-    ''' 
     return(Oplist)
-  
+
 def geodir(p,Da,Oplist,indnbr,d):
     Base = Oplist[p].T
     Xp = (Da[indnbr[p]] - Da[p]).T
@@ -228,20 +212,6 @@ def geodir(p,Da,Oplist,indnbr,d):
 # pair of points p,q in the data point. The input is the base at each point 
 # Oplist and epsilon. To accelarate the computation, we only compute this 
 # parallel transport operator for near neighbors in the epsilon ball
-'''
-def findopq(Oplist, epsilon):
-    Opq = dict()
-    for p in range(size):
-        for q in range(size):
-            if dmat[p,q]>=epsilon:
-                continue
-            else:
-                Op = Oplist[p]
-                Oq = Oplist[q]
-                u,_,v = npl.svd(np.dot(Op.T, Oq))
-                Opq[p, q] = np.dot(u, v)
-    return(Opq)
-'''
 
 def findopq(Oplist,epsilon,dnbr):
     Opq = dict()
@@ -368,100 +338,38 @@ def El(res,A,W):
 
 def curvatp_gb_ensemble(p,indnbr,Da,Oplist,dnbr):
     nbr = indnbr[p]
-    if(len(nbr)<2):
+    length = len(nbr)
+    if(length < 2):
         return(np.nan)
-    K = np.min([sample_time,len(nbr)*(len(nbr)-1)/2])
     sample_res = []
     sample_coef = []
-    for time in range(K):
-        ind = np.random.choice(nbr,2,replace = False)
-        ind = np.append(p,ind)
-        temp = curvatp_gb_simp(p,ind,Oplist,dnbr)
-        if(np.isnan(temp[0])):
-            continue
-        sample_res.append(temp[0])
-        sample_coef.append(temp[1])
+    for indi in range(length):
+        for indj in range(indi+1,length):
+            ind = np.array([p,nbr[indi],nbr[indj]])
+            temp = curvatp_gb_simp(p,ind,Oplist,dnbr)
+            if(np.isnan(temp[0])):
+                continue
+            sample_res.append(temp[0])
+            sample_coef.append(temp[1])
     sample_res=np.array(sample_res).T
     sample_coef = np.array(sample_coef)
     if(np.sum(~np.isnan(sample_res))==0):
         return(np.nan)
     else:
         W = np.dot(sample_coef,S)
+        rlm_model = stat.RLM
 #       Minimizing the linear system
-        res = fmin(El,np.array([-1,-1,-1,0,0,0]),args=(np.array(sample_res),W),disp=False)
+        res = fmin(El,np.array([-0.5,-0.5,-0.5,-0.5,-0.5,-0.5]),args=(np.array(sample_res),W),disp=False)
     return(res)
-
-'''        
-def curvatp_quadfit(p,indnbr,Da,dmat,wmat,d, base):
-    nbr = indnbr[p]
-    X = (Da[nbr] - Da[p]).T
-    norm = np.cross(base[:,0],base[:,1])
-    base = np.vstack((base[:,0],base[:,1],norm))
-    X = np.dot(base.T, X).T
-    print("X: ",X)
-    z= X[:,2]
-    xsquare = X[:,0] * X[:,0]
-    xy = X[:,0] * X[:,1]
-    ysquare = X[:,1] * X[:,1]
-    X = np.vstack((xsquare,xy,ysquare)).T
-    print("X: ", X)
-    beta = npl.solve(np.dot(X.T,X),np.dot(X.T,z))
-    print("beta: ", beta)
-    res = 4*beta[0]*beta[2]-beta[1]*beta[1]
-    return(res)    
-
-def curvatp_gb_enclose(p,indnbr,Da,Oplist,dnbr):
-    nbr = indnbr[p]
-    if(len(nbr) < 3):
-        return(-1)
-    used = np.zeros(len(nbr))
-    base = Oplist[p].T
-    X = np.dot(base,(Da[nbr]-Da[p]).T)
-    res_all = []
-    ind = 0
-    for i in np.arange(ind,len(nbr)-2):
-        if used[i] == 1:
-            continue
-        for j in np.arange(ind+1,len(nbr)-1):
-            if used[j] == 1:
-                continue
-            for k in np.arange(j + 1,len(nbr)):
-                if used[k] == 1:
-                    continue
-                else:
-                    norm0 = np.cross(X[:,i],X[:,j])
-                    norm1 = np.cross(X[:,j],X[:,k])
-                    norm2 = np.cross(X[:,k],X[:,i])
-                    if(np.inner(norm0,norm1) < 0 or np.inner(norm1,norm2) < 0):
-                        continue
-                    else:
-                        index = np.array([nbr[i],nbr[j],nbr[k]])
-                        result = curvatp_gb_simp(p,index,Oplist)
-                        res_all.append(result)
-                        used[i] = 1
-                        used[j] = 1
-                        used[k] = 1
-                        ind += 1
-        continue
-    res_all = np.array(res_all)
-    res_all = res_all[res_all>0]
-    if(len(res_all) == 0):
-        return(-2)
-    else:
-        res = np.median(res_all)
-    return(res)
-'''
 
 t1 = time.time()  
 
 for eps in epsilon:
     dnbr,wnbr,indnbr = findnbr(Da,eps)
     Oplist = findbase(Da,dnbr,wnbr,indnbr)
-    Opq = findopq(Oplist,eps,dnbr)
     res_gb = np.zeros((size,dim*dim*(dim*dim-1)/12))
     for p in range(repeat_time):
         res_gb[p,:] = curvatp_gb_ensemble(p,indnbr,Da,Oplist,dnbr)
-        print(p)
 #       res_paras_ensemble[iter,p] = curvatp_paratrans_ensemble(p,Da,Oplist,Opq,eps,dnbr,indnbr)
 #       res_quadfit[p] = curvatp_quadfit(p,indnbr,Da,dmat,wmat,d, Oplist[p])
     iter += 1
@@ -469,7 +377,10 @@ for eps in epsilon:
     if(np.sum(~np.isnan(res_gb))==0):
         print("No successful point under this epsilon")
         continue
-    print(res_gb[:100,:3])
+    for i in range(dim*(dim-1)/2):
+        print("Median",i+1,": ", np.median(res_gb[:,i]))
+        print("Variance",i+1,": ",np.var(res_gb[:,i]))
+#   print(res_gb)
 t2 = time.time()
 print("time: ",t2-t1)
 

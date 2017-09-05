@@ -32,13 +32,13 @@
 \section{Estimation Step}
 The algorithm to estimate the Riemann curvature tensor can be divided into three stages:
 \begin{enumerate}
-	\item Preprocessing: Construct $\varepsilon-$NN or $K-$NN neighborhood graph for the data point, Decide the intrinsic dimension of the data manifold $d$ and find bases for the tangent space $T_p\mathcal{M}$ at every point $p$ on the manifold using local Principal Component Analysis(PCA). 
-	\item Resampling: Randomly choose two points in the neighborhood and calculate the Gaussian curvature of this section(which is the sectional curvature) and repeat this process for $H$ times.
-	\item Estimating: Solve an optimization problem to find the values of every component $Rm(X,Y,Z,W)$ of the Riemann curvature tensor.
+	\item Construct $\varepsilon-$NN or $K-$NN neighborhood graph for the data point, Decide the intrinsic dimension of the data manifold $d$ and find bases for the tangent space $T_p\mathcal{M}$ at every point $p$ on the manifold using local Principal Component Analysis(PCA). 
+	\item Choose all possible two points in the neighborhood and calculate the Gaussian curvature of this section(which is the sectional curvature) and repeat this process for $H$ times.
+	\item Solve an optimization problem to find the values of every component $Rm(X,Y,Z,W)$ of the Riemann curvature tensor.
 \end{enumerate}
 
 \subsection{Local PCA for tangent space estimation}
-As tradiational manifold learning method works, the input data for a manifold learning algorithm is a set of point $\mathcal{D}=\{x_i\}_{i=1}^N \subset \mathcal{M} \subset \mathbb{R}^D$. We preprocess the data by first constructing a neighborhood graph $\mathcal{G}=(V,E)$ where $V$ are the vertices and $E$ the edges of $\mathcal{G}$. Here in the graph we define the neighborhood of a point $p$ as the set of points whose distance to $p$ is less than $\sqrt{\varepsilon}$. And we only connect one point with its neighbors in the graph. Note that this graph is symmetric naturally.
+As traditional manifold learning method works, the input data for a manifold learning algorithm is a set of point $\mathcal{D}=\{x_i\}_{i=1}^N \subset \mathcal{M} \subset \mathbb{R}^D$. We preprocess the data by first constructing a neighborhood graph $\mathcal{G}=(V,E)$ where $V$ are the vertices and $E$ the edges of $\mathcal{G}$. Here in the graph we define the neighborhood of a point $p$ as the set of points whose distance to $p$ is less than $\sqrt{\varepsilon}$. And we only connect one point with its neighbors in the graph. Note that this graph is symmetric naturally.
 \par
 Here we follow the standard technique that many tangent based manifold learning adopt to estimate the tangent space at every point $p$ on the manifold such as \cite{VDM} \cite{ltsa} etc. 
 \par
@@ -67,15 +67,17 @@ And then we take the first $d$ columns and can get our estimation of the base of
 And \cite{VDM} have more specific discussion of local PCA for interesting readers.
 
 \subsection{Resampling to get sectional curvatures}
- For two points $s,t$ in the neighborhood of point $p$, we suppose that 
- $\gamma_s$ and $\gamma_t$ are the geodesics connecting $p$ to $s$ and $t$ in the manifold and $\boldsymbol{a},\boldsymbol{b}$ are the tangent vectors of $\gamma_s$ and $\gamma_t$ at point $p$. Then we can form a 2-manifold $\romannum{2}(\boldsymbol{a},\boldsymbol{b})$ as the section. Since $\gamma_s$ and $\gamma_t$ curves locally minimizing distance from $p$ to $s$ and $t$ on the whole manifold, they should also be geodesics on $\romannum{2}(\boldsymbol{a},\boldsymbol{b})$. Then we imagine an additional geodesic connecting $s$ and $t$ on $\romannum{2}(\boldsymbol{a},\boldsymbol{b})$
+ For two points $a,b$ in the neighborhood of point $p$, we suppose that 
+ $\gamma_a$ and $\gamma_b$ are the geodesics connecting $p$ to $a$ and $b$ in the manifold and $\boldsymbol{a},\boldsymbol{b}$ are the tangent vectors of $\gamma_s$ and $\gamma_t$ at point $p$. Then we can form a 2-manifold $\romannum{2}(\boldsymbol{a},\boldsymbol{b})$ as the section: the image of the exponential map of the plane in the tangent space spanned by $\{\boldsymbol{a},\boldsymbol{b}\}$. Since $\gamma_s$ and $\gamma_t$ curves locally minimizing distance from $p$ to $s$ and $t$ on the whole manifold, they should also be geodesics on $\romannum{2}(\boldsymbol{a},\boldsymbol{b})$. Then we imagine an additional geodesic connecting $s$ and $t$ on $\romannum{2}(\boldsymbol{a},\boldsymbol{b})$
 \par
 Now let's turn to the geodesic triangle $\Delta_{pst}$ on the 2-manifold. The Gauss-Bonnet formula will be simpler since we are considering geodesic triangle:
 \begin{equation}
-	 	
-\end{equation} we have the following approximation of the Gaussian curvature of the 2-manifold $\romannum{2}(\boldsymbol{a},\boldsymbol{b})$
+	 	\iint_{\Delta{pab}}KdA =\alpha_p+\alpha_a+\alpha_b - \pi
+\end{equation}
+Here $\alpha_p$ is the smaller angle between $\boldsymbol{a},\boldsymbol{b}$ on the tangent plane. And $\alpha_a,\alpha_b$ are similarly defined.
+Therefore, we have the following approximation of the Gaussian curvature of the 2-manifold $\romannum{2}(\boldsymbol{a},\boldsymbol{b})$
 \begin{equation}
-	\widehat{K}(\boldsymbol{a},\boldsymbol{b})\approx\frac{\alpha_p+\alpha_s+\alpha_t-\pi}{\text{Area}(\Delta_{pst})}
+	\widehat{K}(\boldsymbol{a},\boldsymbol{b})\approx\frac{\alpha_p+\alpha_a+\alpha_b-\pi}{\text{Area}(\Delta_{pab})}
 	\label{approxK}
 \end{equation}
 at point $p$. For this apporximation we naively suppose that $K$ is almost constant on the small neighborhood of $p$ on this section plane.
@@ -100,9 +102,9 @@ Therefore with \ref{secCurve} and \ref{linexpan},
 	K(\boldsymbol{a},\boldsymbol{b})\left(\sum_{i=1}^da_i^2\sum_{j=1}^db_j^2-(\sum_{k=1}^da_kb_k)^2\right)=\sum_{i_1=1}^d\sum_{i_2=1}^d\sum_{i_3=1}^d\sum_{i_4=1}^da_{i_1}b_{i_2}b_{i_3}a_{i_4}Rm(\boldsymbol{u}_{i_1},\boldsymbol{u}_{i_2},\boldsymbol{u}_{i_3},\boldsymbol{u}_{i_4})
 	\label{Maineq}
 \end{equation}
-And we substitute our estimation of $K$ there, we have a linear equation for the components $R_{ijkl}=Rm(widehat{boldsymbol{u}}_i,widehat{boldsymbol{u}}_j,widehat{boldsymbol{u}}_k,widehat{boldsymbol{u}}_l)$.
+And we substitute our estimation of $K$ there, we have a linear equation for the components $R_{ijkl}=Rm(\widehat{\boldsymbol{u}}_i,\widehat{\boldsymbol{u}}_j,\widehat{\boldsymbol{u}}_k,\widehat{\boldsymbol{u}}_l)$.
 \par
-Now let's repeat this process for $H$ times. We naively use the projection of $s-p,t-p$ onto the tangent space $T_p\mathcal{M}$ to approximate $\boldsymbol{a},\boldsymbol{b}$. 
+Now let's repeat this process for every possible combination of $(\boldsymbol{a},\boldsymbol{b})$ in neighborhood of $\boldsymbol{p}$ and satisfying that $\parallel \boldsymbol{a}-\boldsymbol{b} \parallel< \varepsilon$. We naively use the projection of $s-p,t-p$ onto the tangent space $T_p\mathcal{M}$ to approximate $\boldsymbol{a},\boldsymbol{b}$. 
 \begin{equation}
 	\widehat{\boldsymbol{a}}=O_p^T(s-p)=\sum_{i=1}^d\widehat{a}_i\widehat{\boldsymbol{u}}_i,\quad \widehat{\boldsymbol{b}}=O_p^T(s-p)=\sum_{i=1}^d\widehat{b}_i\widehat{\boldsymbol{u}}_i
 	\label{expandabest}
@@ -237,7 +239,26 @@ Combining with our stretching matrix $S$ we can rewrite the loss function as
 	&=\left(\widehat{K}(\widehat{\boldsymbol{a}}^l,\widehat{\boldsymbol{b}}^l)+\frac{(\widehat{a}_1^l\widehat{b}_2^l-\widehat{a}_2^l\widehat{b}_1^l)^2R_{1212}}{(\widehat{a}_2^l\widehat{b}_1^l-\widehat{a}_1^l\widehat{b}_2^l)^2}\right)^2 \\
 	&=\left(\widehat{K}(\widehat{\boldsymbol{a}}^l,\widehat{\boldsymbol{b}}^l)+R_{1212}\right)^2 
 \end{align}
-We can see that in the case of $2-$dimensions our optimization problem will degenerate to choose the number that minimuze the negative number of the estimated Gaussian curvature.
+We can see that in the case of $2-$dimensions our optimization problem will degenerate to find value that minimuzes the negative of the estimated Gaussian curvature.
+\par
+Now we can summarize our estimation step into a curvature estimation algorithm
+\begin{algorithm}
+	\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+	\renewcommand{\algorithmicensure}{\textbf{Output:}}
+	\caption{Curvature Tensor Estimation}
+	\begin{algorithmic}[1]
+	\REQUIRE $N$ data points in dimension $D$ $\{x_i\}_{i=1}^N$, a point $p$ that we want to estimated the curvature tensor
+	\ENSURE The coefficients of Riemann curvature tensor at point $p$
+	\STATE Construct the $\varepsilon-$neighbor graph $\mathcal{G}$ and the weight matrix $W$ using the heat kernel
+	\STATE Conduct local PCA algorithm to estimate local tangent space at $p$ and all neighbors of $p$
+	\FOR{every pair of $(a,b)$ in the neighborhood of $p$}
+		 \IF{$b$ is in the neighborhood of $a$}
+		 	\STATE Estimate the gaussian curvature using Gauss-Bonnet formula
+		 \ENDIF
+	\ENDFOR
+	\STATE Minimizing the median of the loss function \ref{loss2} to get the estimation.
+	\end{algorithmic}
+\end{algorithm}
 \bibliography{curve}
 \bibliographystyle{plain}
 \end{document}
