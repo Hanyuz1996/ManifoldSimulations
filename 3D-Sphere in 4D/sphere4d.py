@@ -4,8 +4,7 @@ import numpy.linalg as npl
 import scipy as sp
 import scipy.stats as st
 from scipy.spatial.distance import pdist,squareform
-from scipy.optimize import fmin
-from statsmodels.robust.robust_linear_model import RLM
+from scipy.optimize import least_squares,fmin
 #import matplotlib.pyplot as plt
 #import pandas as pd
 import math
