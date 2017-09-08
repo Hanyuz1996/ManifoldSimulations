@@ -1,23 +1,18 @@
 import time
 import numpy as np
 import numpy.linalg as npl
-import scipy as sp
-import scipy.stats as st
-from scipy.spatial.distance import pdist,squareform
-from scipy.optimize import least_squares,fmin
-#import matplotlib.pyplot as plt
-#import pandas as pd
 import math
 import os
+import sys
 my_path = os.getcwd()
 
 # Simulation settings
 np.random.seed(2017)
-mean=[0,0,0,0]
-cov=[[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]]
-size = 2000
+mean=np.zeros(6)
+cov=np.eye(6)
+size = 10000
 epsilon = np.array([0.5])
-dim = 3
+dim = 5
 t = 1
 repeat_time = size
 num_of_nbr = np.zeros(size)
@@ -102,10 +97,12 @@ def stretch(d):
                         else:
                             S[findind(1,i,j,k,l)-1,d*(d-1)/2+3*(findind(3,sort[0],sort[1],sort[2])-1)+2]=-1
                             continue
-                    arg = np.argsort([i,j,k,l])
+                    arg = np.argsort(np.argsort([i,j,k,l]))
+                    print(i,j,k,l,arg)
                     sort = np.sort([i,j,k,l])
                     if(abs(arg[0]-arg[1])==abs(arg[2]-arg[3])):
                         if(abs(arg[0]-arg[1])==1):
+                            print("type1")
                             if(arg[0]<arg[1] and arg[2]<arg[3]):
                                 S[findind(1,i,j,k,l)-1,d*(d-1)/2+d*(d-1)*(d-2)/2+2*(findind(4,sort[0],sort[1],sort[2],sort[3])-1)]=1
                                 continue
@@ -119,6 +116,7 @@ def stretch(d):
                                 S[findind(1,i,j,k,l)-1,d*(d-1)/2+d*(d-1)*(d-2)/2+2*(findind(4,sort[0],sort[1],sort[2],sort[3])-1)]=1
                                 continue
                         else:
+                            print("type2")
                             if(arg[0]<arg[1] and arg[2]<arg[3]):
                                 S[findind(1,i,j,k,l)-1,d*(d-1)/2+d*(d-1)*(d-2)/2+2*(findind(4,sort[0],sort[1],sort[2],sort[3])-1)+1]=1
                                 continue
@@ -132,15 +130,22 @@ def stretch(d):
                                 S[findind(1,i,j,k,l)-1,d*(d-1)/2+d*(d-1)*(d-2)/2+2*(findind(4,sort[0],sort[1],sort[2],sort[3])-1)+1]=1
                                 continue
                     else:
+                        print("type3")
+                        print(arg)
+                        print(sort)
                         if(arg[0]<arg[1] and arg[2]<arg[3]):
+                            print("subtype1")
+                            print(findind(1,i,j,k,l),d*(d-1)/2+d*(d-1)*(d-2)/2+2*(findind(4,sort[0],sort[1],sort[2],sort[3])-1))
                             S[findind(1,i,j,k,l)-1,d*(d-1)/2+d*(d-1)*(d-2)/2+2*(findind(4,sort[0],sort[1],sort[2],sort[3])-1)]=-1
                             S[findind(1,i,j,k,l)-1,d*(d-1)/2+d*(d-1)*(d-2)/2+2*(findind(4,sort[0],sort[1],sort[2],sort[3])-1)+1]=1
                             continue
                         elif(arg[0]<arg[1] and arg[2]>arg[3]):
+                            print("subtype2")
                             S[findind(1,i,j,k,l)-1,d*(d-1)/2+d*(d-1)*(d-2)/2+2*(findind(4,sort[0],sort[1],sort[2],sort[3])-1)]=1
                             S[findind(1,i,j,k,l)-1,d*(d-1)/2+d*(d-1)*(d-2)/2+2*(findind(4,sort[0],sort[1],sort[2],sort[3])-1)+1]=-1
                             continue
                         elif(arg[0]>arg[1] and arg[2]<arg[3]):
+                            print("subtype3")
                             S[findind(1,i,j,k,l)-1,d*(d-1)/2+d*(d-1)*(d-2)/2+2*(findind(4,sort[0],sort[1],sort[2],sort[3])-1)]=1
                             S[findind(1,i,j,k,l)-1,d*(d-1)/2+d*(d-1)*(d-2)/2+2*(findind(4,sort[0],sort[1],sort[2],sort[3])-1)+1]=-1
                             continue
@@ -192,93 +197,6 @@ def findbase(Da,dnbr,wnbr,indnbr):
         Oplist.append(Op)
     return(Oplist)
 
-def geodir(p,Da,Oplist,indnbr,d):
-    Base = Oplist[p].T
-    Xp = (Da[indnbr[p]] - Da[p]).T
-    v0 = np.dot(Base, Xp)
-    vnorm = npl.norm(v0,axis=0)
-    v0 = v0/vnorm.T
-    Vinit = np.zeros((d,size))
-    Vinit[:,indnbr[p]]=v0
-#    Vinit = np.reshape(Vinit,(size*d,1),order = 'F')
-#    V = npl.solve((np.eye(size*d)+t*B),Vinit)
-#    V = np.reshape(V,(d,size),order = 'F')
-#    vnorm = npl.norm(V,axis=0)
-#    V = V/vnorm.T
-    return(Vinit)
-
-# Function findopq aims to find the parallel transport operator Opq for each 
-# pair of points p,q in the data point. The input is the base at each point 
-# Oplist and epsilon. To accelarate the computation, we only compute this 
-# parallel transport operator for near neighbors in the epsilon ball
-
-def findopq(Oplist,epsilon,dnbr):
-    Opq = dict()
-    for p in range(size):
-        if (Oplist[p] == -1).all():
-            continue
-        for q in range(size):
-            if (Oplist[q] == -1).all():
-                continue
-            elif (p,q) not in dnbr:
-                continue
-            else:
-                Op = Oplist[p]
-                Oq = Oplist[q]
-                u,_,v = npl.svd(np.dot(Op.T, Oq))
-                Opq[p, q] = np.dot(u, v)
-    return(Opq)
-
-# Function curvatp aims to compute the Gaussian curvature in this sphere case.
-# We already obtain the orthonormal basis for tangent plane at every point.
-# Therefore in this local base the coordinate of the tangent vector is [1,0] and
-# [0,1]. We compute R(X,Y,Y,X) with X=[1,0],Y=[0,1] by first computing R(X,Y)Y
-# in our approach of parallel transport and triangle approximation. Then we obtain
-# the gaussian curvature by compute the inner product of R(X,Y)Y and X, which means
-# we only need to select the first item in the result of R(X,Y)Y. This function
-# only gives the result of R(X,Y)Y.
-
-# A significant problem I didn't notice before is the signal of the curvature
-# Here to test the effect of the estiamtion, I naively save the absolute value
-# of the estimation result since we know that the Gaussian curvature for a sphere
-# should be positive.
-def curvatp_paratrans_simp(p,Da,Oplist,Opq,minind,dnbr):
-    V = geodir(p,Da,Oplist,indnbr,d)
-    if((minind[1],minind[2]) not in dnbr):
-        return(-1)
-    else:
-        u = np.random.uniform(low=0,high=2*np.pi,size=1)
-        X=-V[:,minind[1]]
-        Y=-V[:,minind[2]]
-        pz = np.dot(Opq[minind[0],minind[1]],np.dot(Opq[minind[1],minind[2]],
-                    np.dot(Opq[minind[2],minind[0]],Y)))
-        l1 = dnbr[minind[0],minind[1]]
-        l2 = dnbr[minind[1],minind[2]]
-        l3 = dnbr[minind[0],minind[2]]
-        s = 0.5 * (l1 + l2 + l3)
-        Area = math.sqrt(s*(s-l1)*(s-l2)*(s-l3))
-        diff = ((pz - Y)/Area)
-        res = np.inner(diff,X)/(1-np.inner(X,Y)*np.inner(X,Y))
-#        print("R tensor: ", np.inner(diff,X), "Area: ", Area)
-    return(abs(res)) 
-    
-def curvatp_paratrans_ensemble(p,Da,Oplist,Opq,epsilon,dnbr,indnbr):
-    nbr = indnbr[p]
-    if(len(nbr)<2):
-        res = -1
-        return(res)
-    K = np.min([sample_time,len(nbr)*(len(nbr)-1)/2])
-    sample_res = np.zeros(K)
-    for time in range(K):
-        ind = np.random.choice(nbr,2,replace = False)
-        ind = np.append(p,ind)
-        sample_res[time] = curvatp_paratrans_simp(p,Da,Oplist,Opq,ind,dnbr)
-    if(len(sample_res[sample_res>0])==0):
-        return(-1)
-    else:
-        res = np.median(sample_res[sample_res>0])
-    return(res)
-    
 def angSum(i,j,k,Oplist,Da):
     basei = Oplist[i].T
     basej = Oplist[j].T
@@ -319,74 +237,102 @@ def curvatp_gb_simp(p,ind,Oplist,dnbr):
         ang = angSum(p,ind[0],ind[1],Oplist,Da)
         Area = findArea(p,ind[0],ind[1],dnbr)
         if(Area < 0 or ang[0] < 0):
-            return(np.nan,np.nan)
+            return(None)
         else: 
             res = (ang[0]-np.pi)/Area
     else:
         ang = angSum(ind[0],ind[1],ind[2],Oplist,Da)
         Area = findArea(p,ind[0],ind[1],dnbr)+findArea(p,ind[1],ind[2],dnbr)+findArea(p,ind[0],ind[2],dnbr)
         if(Area < 0 or ang[0] < 0):
-            return(np.nan,np.nan)
+            print("Exit Code 2")
+            return(None)
         else: 
             res = (ang[0]-np.pi)/Area
     coef = np.kron(ang[1],np.kron(ang[2],np.kron(ang[2],ang[1])))/(npl.norm(ang[1])**2*npl.norm(ang[2])**2-(np.inner(ang[1],ang[2]))**2)
     return(res,coef)
-
-def El(res,A,W):
-    return(np.median((A-np.inner(W,res))**2))
-
+    
+def psihuber(u,M=1.35):
+    if(abs(u) <= M):
+        return(u)
+    elif(u > M):
+        return(M)
+    else:
+        return(-M)
+    
+def huberfit(y,x,maxiter=50,tol=1e-8):
+    iteration = 1
+    y=y.T
+    try:
+        beta = npl.solve(np.dot(x.T,x),np.dot(x.T,y)).T
+    except npl.linalg.LinAlgError as err:
+        print("Exit Code 3")
+        return(None)
+    for i in range(maxiter):
+        beta_prev = beta
+        resi = y - np.dot(x,beta)
+        mad = np.median(abs(resi - np.median(resi)))
+        scale = mad/0.6745
+        weight = np.diag(np.array(map(psihuber,resi/scale))/(resi/scale))
+        temp = np.dot(x.T,weight)
+        try:
+            beta = npl.solve(np.dot(temp,x),np.dot(temp,y))
+        except npl.linalg.LinAlgError as err:
+            print("Exit Code 4")
+            return(None)
+        if(sum(abs(beta_prev-beta))<tol):
+            break
+    return(beta)
+    
 def curvatp_gb_ensemble(p,indnbr,Da,Oplist,dnbr):
     nbr = indnbr[p]
     length = len(nbr)
     if(length < 2):
-        return(np.nan)
+        print("Exit Code 5")
+        return(None)
     sample_res = []
     sample_coef = []
     for indi in range(length):
         for indj in range(indi+1,length):
             ind = np.array([p,nbr[indi],nbr[indj]])
             temp = curvatp_gb_simp(p,ind,Oplist,dnbr)
-            if(np.isnan(temp[0])):
+            if(temp is None):
                 continue
             sample_res.append(temp[0])
             sample_coef.append(temp[1])
-    sample_res=np.array(sample_res).T
+    sample_res=np.array(sample_res)
     sample_coef = np.array(sample_coef)
     if(np.sum(~np.isnan(sample_res))==0):
-        return(np.nan)
+        print("Exit Code 6")
+        return(None)
     else:
         W = np.dot(sample_coef,S)
-        rlm_model = RLM(sample_res,W)
-        res_init = rlm_model.fit().params
-#       Minimizing the linear system
-        res = fmin(El,res_init,args=(np.array(sample_res),W),disp=False)
-    return(res_init,res)
+#       Finding the Huber result
+        res = huberfit(sample_res,W)
+        print(res)
+    return(res)
 
 t1 = time.time()  
 for eps in epsilon:
     dnbr,wnbr,indnbr = findnbr(Da,eps)
     Oplist = findbase(Da,dnbr,wnbr,indnbr)
-    res_init = np.zeros((size,dim*dim*(dim*dim-1)/12))
-    res_med = np.zeros((size,dim*dim*(dim*dim-1)/12))
+    res_huber = []
     for p in range(repeat_time):
-        res = curvatp_gb_ensemble(p,indnbr,Da,Oplist,dnbr)
-        res_init[p,:]= res[0]
-        res_med[p,:] = res[1]
+        temp = curvatp_gb_ensemble(p,indnbr,Da,Oplist,dnbr)
+        if(temp is not None):
+            res_huber.append(temp)
 #       res_paras_ensemble[iter,p] = curvatp_paratrans_ensemble(p,Da,Oplist,Opq,eps,dnbr,indnbr)
 #       res_quadfit[p] = curvatp_quadfit(p,indnbr,Da,dmat,wmat,d, Oplist[p])
     iter += 1
-    print("epsilon: ", eps)
-    if(np.sum(~np.isnan(res_init))==0):
+    res_huber = np.array(res_huber)
+    if(len(res_huber)==0):
         print("No successful point under this epsilon")
         continue
     for i in range(dim*(dim-1)/2):
-        print("Median init",i+1,": ", np.median(res_init[:,i]))
-        print("Variance init",i+1,": ",np.var(res_init[:,i]))
-        print("Median med",i+1,": ", np.median(res_med[:,i]))
-        print("Variance med",i+1,": ",np.var(res_med[:,i]))
-#   print(res_gb)
+        print("Median init",i+1,": ", np.median(res_huber[:,i]))
+        print("Variance init",i+1,": ",np.var(res_huber[:,i]))
 t2 = time.time()
 print("time: ",t2-t1)
 
 
     
+
