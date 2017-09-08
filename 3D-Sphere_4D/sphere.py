@@ -10,11 +10,10 @@ my_path = os.getcwd()
 np.random.seed(2017)
 mean=np.zeros(6)
 cov=np.eye(6)
-size = 10000
+size = 20000
 epsilon = np.array([0.5])
 dim = 5
 t = 1
-repeat_time = size
 num_of_nbr = np.zeros(size)
 print(size)
 print(epsilon)
@@ -98,11 +97,9 @@ def stretch(d):
                             S[findind(1,i,j,k,l)-1,d*(d-1)/2+3*(findind(3,sort[0],sort[1],sort[2])-1)+2]=-1
                             continue
                     arg = np.argsort(np.argsort([i,j,k,l]))
-                    print(i,j,k,l,arg)
                     sort = np.sort([i,j,k,l])
                     if(abs(arg[0]-arg[1])==abs(arg[2]-arg[3])):
                         if(abs(arg[0]-arg[1])==1):
-                            print("type1")
                             if(arg[0]<arg[1] and arg[2]<arg[3]):
                                 S[findind(1,i,j,k,l)-1,d*(d-1)/2+d*(d-1)*(d-2)/2+2*(findind(4,sort[0],sort[1],sort[2],sort[3])-1)]=1
                                 continue
@@ -116,7 +113,6 @@ def stretch(d):
                                 S[findind(1,i,j,k,l)-1,d*(d-1)/2+d*(d-1)*(d-2)/2+2*(findind(4,sort[0],sort[1],sort[2],sort[3])-1)]=1
                                 continue
                         else:
-                            print("type2")
                             if(arg[0]<arg[1] and arg[2]<arg[3]):
                                 S[findind(1,i,j,k,l)-1,d*(d-1)/2+d*(d-1)*(d-2)/2+2*(findind(4,sort[0],sort[1],sort[2],sort[3])-1)+1]=1
                                 continue
@@ -130,22 +126,15 @@ def stretch(d):
                                 S[findind(1,i,j,k,l)-1,d*(d-1)/2+d*(d-1)*(d-2)/2+2*(findind(4,sort[0],sort[1],sort[2],sort[3])-1)+1]=1
                                 continue
                     else:
-                        print("type3")
-                        print(arg)
-                        print(sort)
                         if(arg[0]<arg[1] and arg[2]<arg[3]):
-                            print("subtype1")
-                            print(findind(1,i,j,k,l),d*(d-1)/2+d*(d-1)*(d-2)/2+2*(findind(4,sort[0],sort[1],sort[2],sort[3])-1))
                             S[findind(1,i,j,k,l)-1,d*(d-1)/2+d*(d-1)*(d-2)/2+2*(findind(4,sort[0],sort[1],sort[2],sort[3])-1)]=-1
                             S[findind(1,i,j,k,l)-1,d*(d-1)/2+d*(d-1)*(d-2)/2+2*(findind(4,sort[0],sort[1],sort[2],sort[3])-1)+1]=1
                             continue
                         elif(arg[0]<arg[1] and arg[2]>arg[3]):
-                            print("subtype2")
                             S[findind(1,i,j,k,l)-1,d*(d-1)/2+d*(d-1)*(d-2)/2+2*(findind(4,sort[0],sort[1],sort[2],sort[3])-1)]=1
                             S[findind(1,i,j,k,l)-1,d*(d-1)/2+d*(d-1)*(d-2)/2+2*(findind(4,sort[0],sort[1],sort[2],sort[3])-1)+1]=-1
                             continue
                         elif(arg[0]>arg[1] and arg[2]<arg[3]):
-                            print("subtype3")
                             S[findind(1,i,j,k,l)-1,d*(d-1)/2+d*(d-1)*(d-2)/2+2*(findind(4,sort[0],sort[1],sort[2],sort[3])-1)]=1
                             S[findind(1,i,j,k,l)-1,d*(d-1)/2+d*(d-1)*(d-2)/2+2*(findind(4,sort[0],sort[1],sort[2],sort[3])-1)+1]=-1
                             continue
@@ -263,7 +252,7 @@ def huberfit(y,x,maxiter=50,tol=1e-8):
     iteration = 1
     y=y.T
     try:
-        beta = npl.solve(np.dot(x.T,x),np.dot(x.T,y)).T
+        beta = npl.solve(np.dot(x.T,x)+0.001*np.eye(x.shape[1]),np.dot(x.T,y)).T
     except npl.linalg.LinAlgError as err:
         print("Exit Code 3")
         return(None)
@@ -275,7 +264,7 @@ def huberfit(y,x,maxiter=50,tol=1e-8):
         weight = np.diag(np.array(map(psihuber,resi/scale))/(resi/scale))
         temp = np.dot(x.T,weight)
         try:
-            beta = npl.solve(np.dot(temp,x),np.dot(temp,y))
+            beta = npl.solve(np.dot(temp,x)+0.001*np.eye(x.shape[1]),np.dot(temp,y))
         except npl.linalg.LinAlgError as err:
             print("Exit Code 4")
             return(None)
