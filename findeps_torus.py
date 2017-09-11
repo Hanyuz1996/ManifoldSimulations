@@ -1,6 +1,14 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 """
+Created on Sun Sep 10 22:40:12 2017
+
+@author: mac
+"""
+
+#!/usr/bin/env python2
+# -*- coding: utf-8 -*-
+"""
 Created on Thu Sep  7 22:00:09 2017
 
 @author: mac
@@ -10,22 +18,32 @@ import matplotlib.pyplot as mlp
 import os
 my_path = os.getcwd()
 
+# Simulation settings
 np.random.seed(2017)
-mean=np.zeros(5)
-cov=np.eye(5)
+mean=[0,0]
+cov=[[1,0],[0,1]]
 size = 20000
 epsilon = np.arange(0.025,0.725,0.025)
-dim = 4
+dim = 3
 t = 1
+repeat_time = size
+num_of_nbr = np.zeros(size)
 print(size)
 print(epsilon)
 np.set_printoptions(precision = 6, threshold=np.inf)
 
 def gendata(mean,cov,size):
     np.random.seed(2017)
-    X = np.random.multivariate_normal(mean,cov,size)
-    Xnorm = np.linalg.norm(X,axis=1) 
-    Da = X/(Xnorm[:,np.newaxis])       
+    X1 = np.random.multivariate_normal(mean,cov,size)
+    Xnorm = np.linalg.norm(X1,axis=1) 
+    X1 = X1/(Xnorm[:,np.newaxis])
+    X2 = np.random.multivariate_normal(mean,cov,size)
+    Xnorm = np.linalg.norm(X2,axis=1) 
+    X2 = X2/(Xnorm[:,np.newaxis])
+    X3 = np.random.multivariate_normal(mean,cov,size)
+    Xnorm = np.linalg.norm(X3,axis=1) 
+    X3 = X3/(Xnorm[:,np.newaxis])
+    Da = (np.vstack([X1[:,0],X1[:,1],X2[:,0],X2[:,1],X3[:,0],X3[:,1]])).T         
     return(Da)
 
 def findnbr(Da,epsilon):

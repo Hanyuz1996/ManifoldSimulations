@@ -8,13 +8,14 @@ my_path = os.getcwd()
 
 # Simulation settings
 np.random.seed(2017)
-mean=np.zeros(6)
-cov=np.eye(6)
+mean=np.zeros(5)
+cov=np.eye(5)
 size = 20000
-epsilon = np.array([0.5])
-dim = 5
+eps = 0.4
+dim = 4
 t = 1
 num_of_nbr = np.zeros(size)
+repeat_time = 5
 print(size)
 print(epsilon)
 np.set_printoptions(precision = 6, threshold=np.inf)
@@ -146,14 +147,11 @@ def stretch(d):
                     
 # Generating data points
 def gendata(mean,cov,size):
-    np.random.seed(2017)
     X = np.random.multivariate_normal(mean,cov,size)
     Xnorm = np.linalg.norm(X,axis=1) 
     Da = X/(Xnorm[:,np.newaxis])       
     return(Da)
 
-Da = gendata(mean,cov,size)
-iter = 0
 S = stretch(dim)
 
 def findnbr(Da,epsilon):
@@ -301,24 +299,19 @@ def curvatp_gb_ensemble(p,indnbr,Da,Oplist,dnbr):
     return(res)
 
 t1 = time.time()  
-for eps in epsilon:
+res_huber = []
+for ind in range(repeat_time):
+    Da = gendata(mean,cov,size)
     dnbr,wnbr,indnbr = findnbr(Da,eps)
     Oplist = findbase(Da,dnbr,wnbr,indnbr)
-    res_huber = []
-    for p in range(repeat_time):
-        temp = curvatp_gb_ensemble(p,indnbr,Da,Oplist,dnbr)
-        if(temp is not None):
-            res_huber.append(temp)
-#       res_paras_ensemble[iter,p] = curvatp_paratrans_ensemble(p,Da,Oplist,Opq,eps,dnbr,indnbr)
-#       res_quadfit[p] = curvatp_quadfit(p,indnbr,Da,dmat,wmat,d, Oplist[p])
-    iter += 1
-    res_huber = np.array(res_huber)
-    if(len(res_huber)==0):
-        print("No successful point under this epsilon")
-        continue
-    for i in range(dim*(dim-1)/2):
-        print("Median init",i+1,": ", np.median(res_huber[:,i]))
-        print("Variance init",i+1,": ",np.var(res_huber[:,i]))
+    temp = curvatp_gb_ensemble(0,indnbr,Da,Oplist,dnbr)
+if(temp is not None):
+    res_huber.append(temp)
+res_huber = np.array(res_huber)
+for i in range(dim*(dim-1)/2):
+    print("Mean", i+1,": ",np.mean(res_huber[:,i]))
+    print("Median",i+1,": ", np.median(res_huber[:,i]))
+    print("Variance",i+1,": ",np.var(res_huber[:,i]))
 t2 = time.time()
 print("time: ",t2-t1)
 
