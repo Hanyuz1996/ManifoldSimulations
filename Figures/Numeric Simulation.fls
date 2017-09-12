@@ -1,9 +1,9 @@
-PWD /Users/mac/Desktop/Sim-2DSphere/Figures
+PWD /Users/mac/Desktop/ManifoldSimulations/Figures
 INPUT /usr/local/texlive/2016/texmf.cnf
 INPUT /usr/local/texlive/2016/texmf-dist/web2c/texmf.cnf
 INPUT /usr/local/texlive/2016/texmf-var/web2c/xetex/xelatex.fmt
-INPUT Simulation Result3.tex
-OUTPUT Simulation Result3.log
+INPUT Numeric Simulation.tex
+OUTPUT Numeric Simulation.log
 INPUT /usr/local/texlive/2016/texmf-dist/tex/latex/base/article.cls
 INPUT /usr/local/texlive/2016/texmf-dist/tex/latex/base/article.cls
 INPUT /usr/local/texlive/2016/texmf-dist/tex/latex/base/size10.clo
@@ -46,9 +46,9 @@ INPUT /usr/local/texlive/2016/texmf-dist/tex/generic/ifxetex/ifxetex.sty
 INPUT /usr/local/texlive/2016/texmf-dist/tex/generic/ifxetex/ifxetex.sty
 INPUT /usr/local/texlive/2016/texmf-dist/tex/latex/tools/bm.sty
 INPUT /usr/local/texlive/2016/texmf-dist/tex/latex/tools/bm.sty
-INPUT Simulation Result3.aux
-INPUT Simulation Result3.aux
-OUTPUT Simulation Result3.aux
+INPUT Numeric Simulation.aux
+INPUT Numeric Simulation.aux
+OUTPUT Numeric Simulation.aux
 INPUT /usr/local/texlive/2016/texmf-dist/fonts/map/fontname/texfonts.map
 INPUT /usr/local/texlive/2016/texmf-dist/fonts/tfm/public/cm/cmr17.tfm
 INPUT /usr/local/texlive/2016/texmf-dist/fonts/tfm/public/cm/cmr12.tfm
@@ -82,12 +82,8 @@ INPUT /usr/local/texlive/2016/texmf-dist/fonts/tfm/public/amsfonts/cmextra/cmmib
 INPUT /usr/local/texlive/2016/texmf-dist/fonts/tfm/public/cm/cmbsy10.tfm
 INPUT /usr/local/texlive/2016/texmf-dist/fonts/tfm/public/amsfonts/cmextra/cmbsy8.tfm
 INPUT /usr/local/texlive/2016/texmf-dist/fonts/tfm/public/amsfonts/cmextra/cmbsy6.tfm
-INPUT /usr/local/texlive/2016/texmf-dist/fonts/tfm/public/cm/cmr12.tfm
-INPUT /usr/local/texlive/2016/texmf-dist/fonts/tfm/public/cm/cmbx12.tfm
-INPUT Boxplot-size-1000-epsilon-35.eps
-INPUT Boxplot-size-1000-epsilon-35.eps
-INPUT Quantileplot-size-1000-epsilon-35.eps
-INPUT Quantileplot-size-1000-epsilon-35.eps
+INPUT /usr/local/texlive/2016/texmf-dist/tex/latex/base/omscmr.fd
+INPUT /usr/local/texlive/2016/texmf-dist/tex/latex/base/omscmr.fd
 INPUT /usr/local/texlive/2016/texmf-dist/fonts/tfm/public/amsfonts/cmextra/cmex7.tfm
 INPUT /usr/local/texlive/2016/texmf-dist/fonts/tfm/public/amsfonts/cmextra/cmex7.tfm
 INPUT /usr/local/texlive/2016/texmf-dist/fonts/tfm/public/amsfonts/symbols/msam10.tfm
@@ -105,20 +101,13 @@ INPUT /usr/local/texlive/2016/texmf-dist/fonts/tfm/public/amsfonts/cmextra/cmmib
 INPUT /usr/local/texlive/2016/texmf-dist/fonts/tfm/public/cm/cmbsy10.tfm
 INPUT /usr/local/texlive/2016/texmf-dist/fonts/tfm/public/amsfonts/cmextra/cmbsy7.tfm
 INPUT /usr/local/texlive/2016/texmf-dist/fonts/tfm/public/amsfonts/cmextra/cmbsy5.tfm
-INPUT Trun-Quantileplot-size-1000-epsilon-35.eps
-INPUT Trun-Quantileplot-size-1000-epsilon-35.eps
-INPUT Boxplot-size-4000-epsilon-15.eps
-INPUT Boxplot-size-4000-epsilon-15.eps
-INPUT Quantileplot-size-4000-epsilon-15.eps
-INPUT Quantileplot-size-4000-epsilon-15.eps
-INPUT Trun-Quantileplot-size-4000-epsilon-15.eps
-INPUT Trun-Quantileplot-size-4000-epsilon-15.eps
-INPUT Normcos-size-1000.eps
-INPUT Normcos-size-1000.eps
-INPUT HSlpca-size-1000.eps
-INPUT HSlpca-size-1000.eps
-INPUT Normcos-size-4000.eps
-INPUT Normcos-size-4000.eps
-INPUT HSlpca-size-4000.eps
-INPUT HSlpca-size-4000.eps
-INPUT Simulation Result3.aux
+INPUT sphere4d.png
+INPUT torus.png
+INPUT ctorus.png
+INPUT psphere.png
+INPUT Numeric Simulation.bbl
+INPUT Numeric Simulation.bbl
+INPUT /usr/local/texlive/2016/texmf-dist/fonts/tfm/public/cm/cmr12.tfm
+INPUT /usr/local/texlive/2016/texmf-dist/fonts/tfm/public/cm/cmbx12.tfm
+INPUT /usr/local/texlive/2016/texmf-dist/fonts/tfm/public/cm/cmti10.tfm
+INPUT Numeric Simulation.aux

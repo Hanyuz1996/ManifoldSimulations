@@ -1,0 +1,46 @@
+This is BibTeX, Version 0.99d (TeX Live 2016)
+Capacity: max_strings=35307, hash_size=35307, hash_prime=30011
+The top-level auxiliary file: Numeric Simulation.aux
+The style file: plain.bst
+Database file #1: curve.bib
+You've used 2 entries,
+            2118 wiz_defined-function locations,
+            517 strings with 4440 characters,
+and the built_in function-call counts, 795 in all, are:
+= -- 80
+> -- 25
+< -- 2
++ -- 11
+- -- 8
+* -- 60
+:= -- 125
+add.period$ -- 6
+call.type$ -- 2
+change.case$ -- 9
+chr.to.int$ -- 0
+cite$ -- 2
+duplicate$ -- 34
+empty$ -- 65
+format.name$ -- 8
+if$ -- 170
+int.to.chr$ -- 0
+int.to.str$ -- 2
+missing$ -- 3
+newline$ -- 13
+num.names$ -- 4
+pop$ -- 11
+preamble$ -- 1
+purify$ -- 8
+quote$ -- 0
+skip$ -- 25
+stack$ -- 0
+substring$ -- 62
+swap$ -- 13
+text.length$ -- 2
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 6
+warning$ -- 0
+while$ -- 9
+width$ -- 3
+write$ -- 26
