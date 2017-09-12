@@ -8,16 +8,12 @@ my_path = os.getcwd()
 
 # Simulation settings
 np.random.seed(2017)
-mean=[0,0]
-cov=[[1,0],[0,1]]
 size = 10000
-epsilon = np.array([0.5])
-dim = 3
+eps = np.array([0.5])
+dim = 2
 t = 1
-repeat_time = size
+repeat_time = 5
 num_of_nbr = np.zeros(size)
-print(size)
-print(epsilon)
 np.set_printoptions(precision = 6, threshold=np.inf)
 
 
@@ -146,22 +142,28 @@ def stretch(d):
     return(S)    
                     
 # Generating data points
-def gendata(mean,cov,size):
-    np.random.seed(2017)
-    X1 = np.random.multivariate_normal(mean,cov,size)
-    Xnorm = np.linalg.norm(X1,axis=1) 
-    X1 = X1/(Xnorm[:,np.newaxis])
-    X2 = np.random.multivariate_normal(mean,cov,size)
-    Xnorm = np.linalg.norm(X2,axis=1) 
-    X2 = X2/(Xnorm[:,np.newaxis])
-    X3 = np.random.multivariate_normal(mean,cov,size)
-    Xnorm = np.linalg.norm(X3,axis=1) 
-    X3 = X3/(Xnorm[:,np.newaxis])
-    Da = (np.vstack([X1[:,0],X1[:,1],X2[:,0],X2[:,1],X3[:,0],X3[:,1]])).T         
-    return(Da)
+def gendata(size):
+    phi = np.asarray(np.random.uniform(0,2*np.pi,size))
+    n = 0
+    theta = np.ndarray((size,))
+    while(n<size):
+        x = np.random.uniform(0,2*np.pi,1)
+        y = np.random.uniform(0,1/np.pi,1)
+        fx = (1+0.5*np.cos(x))/(2*np.pi)
+        if(y<fx):
+            theta[n] = x
+            n += 1
+        else:
+            continue
+    Da = np.zeros((size,3))
+    Da[:,0] = (2+np.cos(theta))*np.cos(phi)
+    Da[:,1] = (2+np.cos(theta))*np.sin(phi)
+    Da[:,2] = np.sin(theta)
+    K = np.zeros(size)
+    K = np.cos(theta)/(2+np.cos(theta))
+    print(K[:20])
+    return(Da,K)
 
-Da = gendata(mean,cov,size)
-iter = 0
 S = stretch(dim)
 
 def findnbr(Da,epsilon):
@@ -299,35 +301,37 @@ def curvatp_gb_ensemble(p,indnbr,Da,Oplist,dnbr):
         W = np.dot(sample_coef,S)
 #       Finding the Huber result
         res = huberfit(sample_res,W)
-        print(res)
     return(res)
 
 t1 = time.time()  
-for eps in epsilon:
+res_huber = []
+for p in range(repeat_time):
+    print(p)
+    Da,K = gendata(size)
     dnbr,wnbr,indnbr = findnbr(Da,eps)
     Oplist = findbase(Da,dnbr,wnbr,indnbr)
-    res_huber = []
-    for p in range(repeat_time):
-        temp = curvatp_gb_ensemble(p,indnbr,Da,Oplist,dnbr)
-        if(temp is None):
-            continue
-        elif(np.isnan(temp[0])):
-            continue
-        else:
-            res_huber.append(temp)
+    temp = curvatp_gb_ensemble(0,indnbr,Da,Oplist,dnbr)
+    if(temp is None):
+        continue
+    elif(np.isnan(temp[0])):
+        continue
+    else:
+        res_huber.append(temp[0]+K[0])
 #       res_paras_ensemble[iter,p] = curvatp_paratrans_ensemble(p,Da,Oplist,Opq,eps,dnbr,indnbr)
 #       res_quadfit[p] = curvatp_quadfit(p,indnbr,Da,dmat,wmat,d, Oplist[p])
-    iter += 1
-    res_huber = np.array(res_huber)
-    if(len(res_huber)==0):
-        print("No successful point under this epsilon")
-        continue
-    for i in range(dim*(dim-1)/2):
-        print("Median init",i+1,": ", np.median(res_huber[:,i]))
-        print("Variance init",i+1,": ",np.var(res_huber[:,i]))
-    print(res_huber)
+print(res_huber)
+'''
+if(len(res_huber)==0):
+    print("No successful point under this epsilon")
+for i in range(dim*(dim-1)/2):
+    print("Median diff",i+1,": ", np.median(res_huber[:,i]))
+    print("Mean diff",i+1,": ",np.mean(res_huber[:,i]))
+    print("Variance diff",i+1,": ",np.var(res_huber[:,i]))
+'''
 t2 = time.time()
 print("time: ",t2-t1)
+
+
 
 
     
