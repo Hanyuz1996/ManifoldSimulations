@@ -21,7 +21,7 @@ my_path = os.getcwd()
 
 # Simulation settings
 np.random.seed(2017)
-size = 30000
+size = 20000
 epsilon = np.arange(0.025,0.425,0.025)
 dim = 3
 t = 1
@@ -30,22 +30,22 @@ num_of_nbr = np.zeros(size)
 np.set_printoptions(precision = 6, threshold=np.inf)
 
 def gendata(size):
-    phi = np.asarray(np.random.uniform(0,2*np.pi,size))
+    u = np.asarray(np.random.uniform(0,2*np.pi,size))
     n = 0
-    theta = np.ndarray((size,))
+    v = np.ndarray((size,))
     while(n<size):
-        x = np.random.uniform(0,2*np.pi,1)
-        y = np.random.uniform(0,1/np.pi,1)
-        fx = (1+0.5*np.cos(x))/(2*np.pi)
-        if(y<fx):
-            theta[n] = x
+        x = np.random.uniform(0,1,1)
+        y = np.random.uniform(0,np.pi,1)
+        fx = np.cos(y)*np.pi
+        if(x<fx):
+            v[n] = y
             n += 1
         else:
             continue
     Da = np.zeros((size,3))
-    Da[:,0] = (2+np.cos(theta))*np.cos(phi)
-    Da[:,1] = (2+np.cos(theta))*np.sin(phi)
-    Da[:,2] = np.sin(theta)
+    Da[:,0] = np.cos(u)*np.sin(v)
+    Da[:,1] = np.sin(u)*np.sin(v)
+    Da[:,2] = -np.cos(v)-np.log(np.tan(0.5*v))
     return(Da)
 
 
@@ -68,8 +68,15 @@ def findnbr(Da,epsilon):
 
 Da = gendata(size)
 meannbr = np.zeros(len(epsilon))
-i = 0
+'''
+fig = plt.figure()
+ax = plt.subplot(111,projection='3d')
+ax.scatter(Da[:,0],Da[:,1],Da[:,2],s=np.repeat(1,size))
 
+plt.show()
+
+'''
+i = 0
 for eps in epsilon:
     print(eps)
     temp = findnbr(Da,eps)
