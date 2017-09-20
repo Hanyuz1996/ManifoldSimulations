@@ -11,13 +11,10 @@ np.random.seed(2017)
 mean=np.zeros(5)
 cov=np.eye(5)
 size = 20000
-eps = 0.4
+epsilon = 0.4
 dim = 4
 t = 1
-num_of_nbr = np.zeros(size)
-repeat_time = 5
-print(size)
-print(epsilon)
+repeat_time = 1000
 np.set_printoptions(precision = 6, threshold=np.inf)
 
 
@@ -149,7 +146,11 @@ def stretch(d):
 def gendata(mean,cov,size):
     X = np.random.multivariate_normal(mean,cov,size)
     Xnorm = np.linalg.norm(X,axis=1) 
-    Da = X/(Xnorm[:,np.newaxis])       
+    Da = X/(Xnorm[:,np.newaxis])
+    Da[0] = np.array([1,0,0,0,0])
+    dist_temp = np.sqrt(np.sum((Da-Da[0])**2,axis=1))
+    indp_temp = np.where(dist_temp < 2*epsilon)[0]
+    Da = Da[indp_temp]       
     return(Da)
 
 S = stretch(dim)
@@ -158,21 +159,22 @@ def findnbr(Da,epsilon):
     dnbr = dict()
     wnbr = []
     indnbr = []
-    for p in range(size):
+    indtri = []
+    for p in range(len(Da)):
         dist = np.sqrt(np.sum((Da-Da[p])**2,axis=1))
         indp = np.where(dist < epsilon)[0]
         indp = np.setdiff1d(indp,np.array(p))
         num_of_nbr[p] = len(indp)
         for q in indp:
             dnbr[p,q] = dist[q]    
-        dist = dist[indp]
-        indnbr.append(indp)
-        wnbr.append(np.exp(-(dist**2)/np.sqrt(epsilon)))
-    return(dnbr,wnbr,indnbr)
+        indnbr.append(np.random.choice(indp,len(indp)/2,replace=False))
+        indtri.append(np.setdiff1d(indp,indnbr[p]))
+        wnbr.append(np.exp(-(dist[indnbr[p]]**2)/np.sqrt(epsilon)))
+    return(dnbr,wnbr,indnbr,indtri)
 
 def findbase(Da,dnbr,wnbr,indnbr):
     Oplist = []
-    for p in range(size):
+    for p in range(len(Da)):
         if len(indnbr[p]) < 2:
             Oplist.append(np.array([-1]))
             continue
@@ -246,7 +248,7 @@ def psihuber(u,M=1.35):
     else:
         return(-M)
     
-def huberfit(y,x,maxiter=50,tol=1e-8):
+def huberfit(y,x,maxiter=1000,tol=1e-8):
     iteration = 1
     y=y.T
     try:
@@ -270,8 +272,8 @@ def huberfit(y,x,maxiter=50,tol=1e-8):
             break
     return(beta)
     
-def curvatp_gb_ensemble(p,indnbr,Da,Oplist,dnbr):
-    nbr = indnbr[p]
+def curvatp_gb_ensemble(p,indtri,Da,Oplist,dnbr):
+    nbr = indtri[p]
     length = len(nbr)
     if(length < 2):
         print("Exit Code 5")
@@ -302,16 +304,15 @@ t1 = time.time()
 res_huber = []
 for ind in range(repeat_time):
     Da = gendata(mean,cov,size)
-    dnbr,wnbr,indnbr = findnbr(Da,eps)
+    num_of_nbr = np.zeros(len(Da))
+    dnbr,wnbr,indnbr,indtri = findnbr(Da,epsilon)
     Oplist = findbase(Da,dnbr,wnbr,indnbr)
-    temp = curvatp_gb_ensemble(0,indnbr,Da,Oplist,dnbr)
-if(temp is not None):
-    res_huber.append(temp)
-res_huber = np.array(res_huber)
-for i in range(dim*(dim-1)/2):
-    print("Mean", i+1,": ",np.mean(res_huber[:,i]))
-    print("Median",i+1,": ", np.median(res_huber[:,i]))
-    print("Variance",i+1,": ",np.var(res_huber[:,i]))
+    temp = curvatp_gb_ensemble(0,indtri,Da,Oplist,dnbr)
+    if(temp is not None):
+        res_huber.append(temp)
+res_huber = np.vstack(res_huber)
+for i in range(6):
+    print(np.median(res_huber[:,i]))
 t2 = time.time()
 print("time: ",t2-t1)
 
